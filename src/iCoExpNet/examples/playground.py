@@ -19,7 +19,7 @@ package_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.insert(0, package_path)
 
 # import the iCoExpNet class
-from iCoExpNet.core import iCoExpNet
+from icoexpnet.core import iCoExpNet
 
 # Worker used for multiprocessing
 def worker(arg):

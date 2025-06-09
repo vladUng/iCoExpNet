@@ -21,7 +21,7 @@ package_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 sys.path.insert(0, package_path)
 
 
-from iCoExpNet.core import iCoExpNet
+from icoexpnet.core import iCoExpNet
 
 
 # Worker used for multiprocessing
@@ -59,7 +59,7 @@ edges_pg, edges_sel = 3, 6
 # for non-control runs
 if 1:
     output_folder = 'results/test/'
-    label = 'testParallel'
+    label = 'testParallel2'
 
     # Step 1: Generate the network objects with the parameters we want to test
     # e.g. here we generate two networks with 3 and 5 edges for the selected subset genes
