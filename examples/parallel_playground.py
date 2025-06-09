@@ -58,7 +58,7 @@ edges_pg, edges_sel = 3, 6
 
 # for non-control runs
 if 1:
-    output_folder = '../results/test/'
+    output_folder = 'results/test/'
     label = 'testData'
 
     # Step 1: Generate the network objects with the parameters we want to test
@@ -88,7 +88,7 @@ if 1:
 # Run this for controls
 if 1:
  
-    output_folder = '../results/testCtrl/'
+    output_folder = 'results/testCtrl/'
     label = 'testCtrlData'
 
     # read the control genes - these are non-TF genes that are used to generate the control networks with higher number of edges

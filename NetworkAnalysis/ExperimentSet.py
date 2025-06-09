@@ -115,7 +115,7 @@ class ExperimentSet:
         return self.exps.values()
 
     def generate_modConsMut(self, modifiers=[]):
-        # The problem with the parallysed code is that it doesn't take the reference to the next code
+        # The problem with the parallelized code is that it doesn't take the reference to the next code
         #  processes = []
 
         # for exp in self.exps.values():
