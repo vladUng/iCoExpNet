@@ -15,12 +15,11 @@ import sys
 
 # Tell Python where to find the iCoExpNet module
 # Add the parent directory of 'examples/' to sys.path
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(script_dir, ".."))
-sys.path.insert(0, project_root)
+package_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, package_path)
 
-from iCoExpNet.main import iCoExpNet
-
+# import the iCoExpNet class
+from iCoExpNet.core import iCoExpNet
 
 # Worker used for multiprocessing
 def worker(arg):
@@ -57,7 +56,7 @@ label = 'testData'
 modifier = 'standard' # Choose one of the modifiers from the list above: reward, penalised, standard, sigmoid
 name = f"{label}_{modifier}_{edges_sel}TF"
 
-output_folder = '../results/test/'
+output_folder = 'results/test/'
 
 inet = iCoExpNet(exp_name=name, ge_file = ge_file, input_folder=input_folder, output_folder=output_folder, gene_subset_file=gene_subset_file, mut_file=mut_file, edges_pg=edges_pg, edges_sel=edges_sel, modifier_type=modifier, genes_kept=genes_kept, sbm_config=sbm_config)
 
