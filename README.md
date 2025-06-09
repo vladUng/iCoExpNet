@@ -19,7 +19,13 @@ iCoExpNet/
 
 # Setup guide
 
-TODO
+⚠️ `graph-tool` must be installed separately:
+
+On Linux:
+sudo apt install python3-graph-tool
+
+Or via conda:
+conda install -c conda-forge graph-tool
 
 # How to use iCoExpNet
 
@@ -35,6 +41,7 @@ python src/iCoExpNet/examples/playground.py
 To run parallel experiments:
 ```sh
 python src/iCoExpNet/examples/parallel_playground.py
+
 ```
 
 Note: Make sure that you have configured the desired data paths and files, look in the data/ folder for more information.

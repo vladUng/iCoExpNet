@@ -194,6 +194,4 @@ cython_debug/
 .cursorindexingignore
 
 # Folders to ignore
-
 results/
-data/
