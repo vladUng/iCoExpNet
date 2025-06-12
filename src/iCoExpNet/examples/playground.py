@@ -8,15 +8,7 @@
 @Contact :   vlad.ungureanu@york.ac.uk
 @Desc    :   Generate a single iNet experiment.
 '''
-import pandas as pd 
 import time as time
-import os
-import sys
-
-# Tell Python where to find the iCoExpNet module
-# Add the parent directory of 'examples/' to sys.path
-package_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, package_path)
 
 # import the iCoExpNet class
 from icoexpnet.core import iCoExpNet

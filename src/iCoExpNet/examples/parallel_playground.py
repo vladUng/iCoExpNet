@@ -10,19 +10,11 @@
 '''
 
 import multiprocess as mp
-import pandas as pd 
 import time as time
 import os
 import sys
 
-# Tell Python where to find the iCoExpNet module
-# Add the parent directory of 'examples/' to sys.path
-package_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, package_path)
-
-
 from icoexpnet.core import iCoExpNet
-
 
 # Worker used for multiprocessing
 def worker(arg):
@@ -58,7 +50,7 @@ edges_pg, edges_sel = 3, 6
 
 # for non-control runs
 if 1:
-    output_folder = 'results/test/'
+    output_folder = 'results/test2/'
     label = 'testParallel2'
 
     # Step 1: Generate the network objects with the parameters we want to test

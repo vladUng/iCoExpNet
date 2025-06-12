@@ -14,12 +14,10 @@ import os
 import igraph as ig
 import numpy as np
 import pandas as pd
-import rere
 import plotly.express as px
 from scipy.stats import zscore
 
 from .utilities import clustering as cs
-from .utilities import markers as mk
 
 
 class NetworkOutput:

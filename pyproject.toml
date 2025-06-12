@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "icoexpnet"
-version = "0.1.1"
+version = "0.1.5"
 description = "iCoExpNet: gene co-expression network construction and analysis"
 authors = [{ name = "Vlad V. Ungureanu", email = "vlad.ungureanu@york.ac.uk" }]
 license = "MIT"
@@ -18,7 +18,9 @@ dependencies = [
     "matplotlib",
     "scikit-learn",
     "igraph",
-    "leidenalg"
+    "leidenalg",
+    'lifelines',
+    'pyarrow'
 ]
 
 [tool.setuptools]
@@ -27,7 +29,8 @@ packages = [
     "icoexpnet",
     "icoexpnet.core",
     "icoexpnet.analysis",
-    "icoexpnet.examples",
+    "icoexpnet.analysis.utilities",
+
 ]
 
 [project.urls]
