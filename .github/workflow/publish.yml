@@ -1,0 +1,49 @@
+name: Build and Publish to PyPI with Changelog
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  publish:
+    name: Build, Generate Changelog, and Upload to PyPI
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Required to push changelog back
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine github-changelog-generator
+
+      - name: Generate or update changelog
+        uses: heinrichreimer/action-github-changelog-generator@v2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and push changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "chore: update changelog [skip ci]" || echo "No changes to commit"
+          git push origin master
+
+      - name: Build the package
+        run: python -m build
+
+      - name: Upload to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*

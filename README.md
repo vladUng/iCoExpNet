@@ -25,7 +25,7 @@ On Linux:
 sudo apt install python3-graph-tool
 
 Or via conda:
-conda install -c conda-forge graph-tool
+conda install -c conda-forge graph-tool33
 
 # How to use iCoExpNet
 
@@ -63,3 +63,4 @@ TODO: add graph to show the different types of edge weights modifier
 # To-Do
 
 * The mutation file is not always needed so adapt the code to have the mutation file as an optional
+* Explain the difference on loading the data for SBM and hSBM

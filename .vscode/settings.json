@@ -5,5 +5,8 @@
         "Ungureanu's",
         "Vlad"
     ],
+    "jupyter.debugJustMyCode": false,
+    "cSpell.logLevel": "Warning",
+    "cSpell.reportUnknownWords": false,
     // configure the conda environment for Python
 }
