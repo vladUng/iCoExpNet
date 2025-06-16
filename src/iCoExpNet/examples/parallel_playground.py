@@ -12,7 +12,6 @@
 import multiprocess as mp
 import time as time
 import os
-import sys
 
 from icoexpnet.core import iCoExpNet
 
@@ -50,12 +49,12 @@ edges_pg, edges_sel = 3, 6
 
 # for non-control runs
 if 1:
-    output_folder = 'results/test2/'
-    label = 'testParallel2'
+    output_folder = 'results/test/'
+    label = 'testParallel'
 
     # Step 1: Generate the network objects with the parameters we want to test
     # e.g. here we generate two networks with 3 and 5 edges for the selected subset genes
-    for edges_sel in range(3, 5):
+    for edges_sel in range(3, 10):
 
         for modifier in ['standard']:
             # name the network to contain the variables that are changing
@@ -99,7 +98,7 @@ if 1:
     for idx, tf_ctrl in enumerate(ctrls):
         print(tf_ctrl)
 
-        for edges_sel in range(3, 5):
+        for edges_sel in range(3, 10):
             name = f"{label}_{modifier}_{edges_sel}TF"
             print(f'{output_folder}/tctrl_{idx+1}')
 
