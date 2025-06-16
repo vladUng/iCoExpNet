@@ -35,18 +35,24 @@ conda install -c conda-forge graph-tool33
 
 To run a single network experiment:
 ```sh
-python src/iCoExpNet/examples/playground.py
+python src/icoexpnet/examples/playground.py
 ```
 
 To run parallel experiments:
 ```sh
-python src/iCoExpNet/examples/parallel_playground.py
+python src/icoexpnet/examples/parallel_playground.py
 
 ```
 
 Note: Make sure that you have configured the desired data paths and files, look in the data/ folder for more information.
 
 TODO: Explain the types of input files and their formats.
+
+# Analysing the network outputs
+
+Check the Notebook from:
+
+`src/icoexpnet/output_analysis/`
 
 # Weight modifiers 
 
@@ -63,4 +69,4 @@ TODO: add graph to show the different types of edge weights modifier
 # To-Do
 
 * The mutation file is not always needed so adapt the code to have the mutation file as an optional
-* Explain the difference on loading the data for SBM and hSBM
+* Explain the difference on loading the data for SBM and **hSBM**
