@@ -17,6 +17,9 @@ import pickle as pickle
 import graph_tool.all as gt
 import numpy as np
 import pandas as pd
+import multiprocess as mp
+from tqdm import tqdm
+import time
 # ploting libs
 import plotly.express as px
 import plotly.graph_objects as go
@@ -1269,3 +1272,62 @@ class GraphToolExperiment(NetworkOutput):
         hex_colors = [rgb_string_to_hex(color) for color in colors]
 
         return hex_colors
+
+    ##### Parallel Community Size Processing #####
+    @staticmethod
+    def _process_experiment_hsbm(args):
+        """Worker function to process a single experiment's hsbm_get_gt_df()"""
+        exp, exp_type = args
+        try:
+            # Validate that exp is GraphToolExperiment
+            if not isinstance(exp, GraphToolExperiment):
+                raise TypeError(f"Expected GraphToolExperiment, got {type(exp).__name__}")
+                
+            results_df, _ = exp.hsbm_get_gt_df()
+            tf = exp.extract_tf_number(exp.name)
+            num_communities = len(results_df["max_b"].unique())
+            return (tf, exp_type, num_communities)
+        except Exception as e:
+            print(f"Error processing experiment {exp.name}: {e}")
+            return None
+
+    @staticmethod
+    def get_community_sizes_parallel(exp_set_exps, pool, batch_size=4, exp_type="Experiment"):
+        """
+        Parallelized extraction of community sizes for GraphToolExperiment objects.
+        
+        Args:
+            exp_set_exps: Dictionary of GraphToolExperiment objects {key: exp}
+            pool: multiprocessing.Pool instance
+            batch_size: Number of experiments to process in each batch
+            exp_type: Label for this experiment set ("Experiment", "Control", etc.)
+            
+        Returns:
+            pd.DataFrame: DataFrame with columns ["TF", "Type", "Com_size"]
+        """
+        # Prepare tasks for parallel processing
+        tasks = []
+        for key, exp in exp_set_exps.items():
+            tasks.append((exp, exp_type))
+        
+        print(f"Processing {len(tasks)} experiments in parallel...")
+        
+        # Process in batches for better memory management
+        all_results = []
+        for i in tqdm(range(0, len(tasks), batch_size), desc=f"Processing {exp_type} batches"):
+            batch = tasks[i:i + batch_size]
+            batch_results = pool.map(GraphToolExperiment._process_experiment_hsbm, batch)
+            all_results.extend(batch_results)
+            
+            # Small delay to prevent overwhelming the system
+            time.sleep(0.1)
+        
+        # Filter out failed results
+        results = [r for r in all_results if r is not None]
+        
+        # Convert to DataFrame
+        community_sizes = []
+        for tf, exp_type_label, num_communities in results:
+            community_sizes.append((tf, exp_type_label, num_communities))
+        
+        return pd.DataFrame(community_sizes, columns=["TF", "Type", "Com_size"])
