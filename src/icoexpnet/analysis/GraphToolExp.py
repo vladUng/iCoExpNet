@@ -29,6 +29,7 @@ from plotly.subplots import make_subplots
 # custom library
 from .NetworkOutput import NetworkOutput
 from .ExperimentSet import ExperimentSet
+from .utilities.memory_optimization import optimize_dataframe_memory
 
 
 
@@ -291,6 +292,7 @@ class GraphToolExperiment(NetworkOutput):
 
         col_names = ["b_{}".format(idx) for idx in range(0, max_part)] + ['node_idx', "max_b"]
         com_df = pd.DataFrame(part_nodes, columns=col_names, index=genes)
+        com_df, _, _ = optimize_dataframe_memory(com_df, "com_df")
 
         self.com_df = com_df
         return com_df
@@ -354,6 +356,7 @@ class GraphToolExperiment(NetworkOutput):
 
         col_names = ["b_{}".format(idx) for idx in range(0, max_part)] + ["node_idx", "level_0"]
         com_df = pd.DataFrame(part_nodes, columns=col_names, index=genes)
+        com_df, _, _ = optimize_dataframe_memory(com_df, "com_df")
 
         #### adding the gene membership from all the levels
 
@@ -374,6 +377,7 @@ class GraphToolExperiment(NetworkOutput):
 
         # merge
         com_df = pd.concat([com_df.drop(columns=["level_0"]), lvl_parts], axis=1)
+        com_df, _, _ = optimize_dataframe_memory(com_df, "com_df")
         com_df["max_b"] = com_df["P_lvl_0"]
 
         return com_df, lvl_parts.columns
@@ -698,6 +702,7 @@ class GraphToolExperiment(NetworkOutput):
     # Network stats
     def compute_graph_stats(self):
         graph_stats = pd.DataFrame(index=[g for g in self.graph.vp["gene"]])
+        graph_stats, _, _ = optimize_dataframe_memory(graph_stats, "graph_stats")
 
         # Degree related metrics
         vp = self.graph.degree_property_map(deg="total", weight=self.graph.ep["weight"])

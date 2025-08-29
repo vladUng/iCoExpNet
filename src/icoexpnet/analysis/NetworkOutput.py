@@ -19,9 +19,11 @@ from scipy.stats import zscore
 import re
 
 from .utilities import clustering as cs
+from .utilities.memory_optimization import MemoryOptimizedMixin, optimize_dataframe_memory, create_optimized_dataframe
+from .utilities.copy_optimization import optimize_leiden_top3, optimize_sort_copy_pattern
 
 
-class NetworkOutput:
+class NetworkOutput(MemoryOptimizedMixin):
     name: str
     exp_meta: pd.DataFrame
     type: str
@@ -79,12 +81,14 @@ class NetworkOutput:
         ###### loading dataframes ######
         #  Leiden
         leidenalg_master = pd.read_csv(self.pgcna_path + "/LEIDENALG/moduleInfoBest.txt", sep="\t")
-        self.leiden_top3 = leidenalg_master.iloc[:3].copy(deep=True)
+        self.leiden_top3 = optimize_leiden_top3(leidenalg_master, 3)
 
         #  get all the tpms used in that run
         all_tpms = pd.read_csv(files_used, sep="\t", index_col="genes")
+        all_tpms, _, _ = optimize_dataframe_memory(all_tpms, "all_tpms")
         #  meta df
         self.meta_df = pd.read_csv(self.pgcna_path + self.meta_path, sep="\t", header=None)
+        self.meta_df, _, _ = optimize_dataframe_memory(self.meta_df, "meta_df")
 
         # processing
         #  rename meta columns
@@ -94,6 +98,7 @@ class NetworkOutput:
         self.leiden_best = pd.read_csv(self.pgcna_path + "/LEIDENALG/BEST/ClustersTxt/" + best_mod)
         #  only the genes ones used in PGCNA
         self.tpm_df = all_tpms.loc[self.leiden_best["Id"]]
+        self.tpm_df, _, _ = optimize_dataframe_memory(self.tpm_df, "tpm_df")
 
         
         #  mut_df
@@ -104,7 +109,7 @@ class NetworkOutput:
             )
             dmy_df.fillna(0, inplace=True)
 
-            self.mut_df = dmy_df
+            self.mut_df, _, _ = optimize_dataframe_memory(dmy_df, "mut_df")
 
     def init_inet(self, graph: ig.Graph, exp_meta: pd.Series, mut_df: pd.DataFrame, base_path: str):
         # Same as for PGCNA parsing
@@ -140,13 +145,15 @@ class NetworkOutput:
         ###### loading dataframes ######
         #  Leiden
         leidenalg_master = pd.read_csv(self.pgcna_path + "/Leiden/summary_leiden.tsv", sep="\t")
-        self.leiden_top3 = leidenalg_master.iloc[:3].copy(deep=True)
+        self.leiden_top3 = optimize_leiden_top3(leidenalg_master, 3)
 
         #  get all the tpms used in that run
         all_tpms = pd.read_csv(tpm_path, sep="\t", index_col="gene")
+        all_tpms, _, _ = optimize_dataframe_memory(all_tpms, "all_tpms")
 
         #  meta df
         self.meta_df = pd.read_csv(self.meta_path, sep="\t")
+        self.meta_df, _, _ = optimize_dataframe_memory(self.meta_df, "meta_df")
 
         ####### processing
         #  rename meta columns; this is was needed for PGCNA parsing. Kept it for consistency
@@ -164,6 +171,7 @@ class NetworkOutput:
         #### TPMs
         # only the genes ones used in PGCNA
         self.tpm_df = all_tpms.loc[self.leiden_best["Id"]]
+        self.tpm_df, _, _ = optimize_dataframe_memory(self.tpm_df, "tpm_df")
 
 
         #### Mutations
@@ -173,7 +181,7 @@ class NetworkOutput:
                 index=self.leiden_best["Id"],
             )
             dmy_df.fillna(0, inplace=True)
-            self.mut_df = dmy_df
+            self.mut_df, _, _ = optimize_dataframe_memory(dmy_df, "mut_df")
         else:
             self.mut_df = pd.DataFrame()
 
@@ -264,7 +272,7 @@ class NetworkOutput:
         info = {}  # used for verbose
         for key, value in modCon.items():
                 
-            data = value.sort_values(by=sort_col, ascending=False).iloc[:num_genes].copy(deep=True)
+            data = optimize_sort_copy_pattern(value, sort_col, num_genes, ascending=False)
             genes = data.index.values
             df = tpms_log[tpms_log.index.isin(genes)].transpose()
 
@@ -318,7 +326,7 @@ class NetworkOutput:
 
         info = {}  # used for verbose
         for key, value in modCon.items():
-            data = value.sort_values(by=sort_col, ascending=False).iloc[:num_genes].copy(deep=True)
+            data = optimize_sort_copy_pattern(value, sort_col, num_genes, ascending=False)
             genes = data.index.values
 
             # find the genes in the dataset
