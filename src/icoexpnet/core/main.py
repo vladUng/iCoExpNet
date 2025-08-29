@@ -123,11 +123,11 @@ class iCoExpNet:
             raise FileExistsError(f"There is no file for Selected genes at {self.sel_ge_file}")
 
         # if we change the edges weights we need to have the mutation files 
-  
         self.mut_file = os.path.abspath(f"{input_folder}/{mut_file}")
-        # check if self.mut_file exists
-        if not os.path.exists(self.mut_file):
-            raise FileNotFoundError(f"There is no file with mutations at {self.mut_file}")
+        # check if self.mut_file exists, if not print a warning that it is not found
+        if not os.path.exists(self.mut_file) or mut_file == '':
+            self.mut_file = None
+            print(f"Warning: There is no file with mutations at {self.mut_file}")
 
         if "graph_type" in kwargs.keys():
             self.graph_type = kwargs["graph_type"]
@@ -284,8 +284,12 @@ class iCoExpNet:
         if not os.path.exists(ge_path):
             raise FileExistsError(f"There is no file for TPMs at {ge_path}")
 
-        if not os.path.exists(mut_path):
-            raise FileExistsError(f"There is no file for TCGA mutations at {mut_path}")
+        # print warning if no mutation file is not found
+        if mut_path is None or not os.path.exists(mut_path):
+            print(f"Warning: There is no file for TCGA mutations at {mut_path}")
+            df_mut = pd.DataFrame()
+        else:
+            df_mut = pd.read_csv(mut_path, index_col="gene", engine="pyarrow", sep="\t")
 
         sel_ge = None
         if sel_ge_path is not None:
@@ -297,7 +301,6 @@ class iCoExpNet:
 
         df = pd.read_csv(ge_path, index_col="gene", sep="\t", engine="pyarrow")
         
-        df_mut = pd.read_csv(mut_path, index_col="gene", engine="pyarrow", sep="\t")
         return df, sel_ge, df_mut
 
     @measure_execution_time
@@ -366,7 +369,7 @@ class iCoExpNet:
             """
             return (1 + math.exp(-(x - x0))) ** -1 * offset + 1
 
-        if modifier_type == "standard":
+        if modifier_type == "standard" or mut_df.empty:
             return corr_df
 
         # the first 2 lines ensures that all the mut_counts are found for the used genes

@@ -94,13 +94,17 @@ class NetworkOutput:
         self.leiden_best = pd.read_csv(self.pgcna_path + "/LEIDENALG/BEST/ClustersTxt/" + best_mod)
         #  only the genes ones used in PGCNA
         self.tpm_df = all_tpms.loc[self.leiden_best["Id"]]
+
+        
         #  mut_df
-        dmy_df = pd.DataFrame(
-            data=mut_df.loc[mut_df.index.isin(self.leiden_best["Id"])],
-            index=self.leiden_best["Id"],
-        )
-        dmy_df.fillna(0, inplace=True)
-        self.mut_df = dmy_df
+        if not mut_df.empty:
+            dmy_df = pd.DataFrame(
+                data=mut_df.loc[mut_df.index.isin(self.leiden_best["Id"])],
+                index=self.leiden_best["Id"],
+            )
+            dmy_df.fillna(0, inplace=True)
+
+            self.mut_df = dmy_df
 
     def init_inet(self, graph: ig.Graph, exp_meta: pd.Series, mut_df: pd.DataFrame, base_path: str):
         # Same as for PGCNA parsing
@@ -160,13 +164,18 @@ class NetworkOutput:
         #### TPMs
         # only the genes ones used in PGCNA
         self.tpm_df = all_tpms.loc[self.leiden_best["Id"]]
+
+
         #### Mutations
-        dmy_df = pd.DataFrame(
-            data=mut_df.loc[mut_df.index.isin(self.leiden_best["Id"])],
-            index=self.leiden_best["Id"],
-        )
-        dmy_df.fillna(0, inplace=True)
-        self.mut_df = dmy_df
+        if not mut_df.empty:
+            dmy_df = pd.DataFrame(
+                data=mut_df.loc[mut_df.index.isin(self.leiden_best["Id"])],
+                index=self.leiden_best["Id"],
+            )
+            dmy_df.fillna(0, inplace=True)
+            self.mut_df = dmy_df
+        else:
+            self.mut_df = pd.DataFrame()
 
     #### PGCNA scores ####
     def compute_scores(self):
@@ -189,7 +198,11 @@ class NetworkOutput:
         success = True
         for key in modCons.keys():
             genes = modCons[key].index.values
-            modCons[key] = pd.concat([modCons[key], self.mut_df["count"], self.graph_stats], axis=1).dropna()
+            if self.mut_df.empty:
+                modCons[key] = pd.concat([modCons[key], self.graph_stats], axis=1).dropna()
+            else:
+                modCons[key] = pd.concat([modCons[key], self.mut_df["count"], self.graph_stats], axis=1).dropna()
+
             if modCons[key].shape[0] != len(genes):
                 print(f"❌ Failed data merger for (Mod {key})!")
                 success = False
@@ -228,7 +241,11 @@ class NetworkOutput:
                 conn_g.append([gene, weights_sum])
 
             conn_df = pd.DataFrame(conn_g, columns=["gene", col]).set_index("gene")
-            working_df = pd.concat([conn_df, meta_df.loc[meta_df["genes"].isin(genes)].set_index("genes"), mut_df[mut_df.index.isin(genes)]["count"]], axis=1)
+
+            if mut_df.empty:
+                working_df = pd.concat([conn_df, meta_df.loc[meta_df["genes"].isin(genes)].set_index("genes")], axis=1)
+            else:
+                working_df = pd.concat([conn_df, meta_df.loc[meta_df["genes"].isin(genes)].set_index("genes"), mut_df[mut_df.index.isin(genes)]["count"]], axis=1)
 
             # 5. Workout the ModCon and save it
             working_df["ModCon_{}".format(self.type)] = (
@@ -473,14 +490,24 @@ class NetworkOutput:
         nodes_df["Gene"] = nodes_df["Id"]  # Needed to for the filter script
         nodes_df.set_index("Id", inplace=True)
 
-        nodes_df = pd.concat(
-            [
-                nodes_df,
-                self.leiden_best.set_index("Id")["Modularity Class"],
-                self.mut_df["count"],
-            ],
-            axis=1,
-        )
+
+        if self.mut_df.empty:
+            nodes_df = pd.concat(
+                [
+                    nodes_df,
+                    self.leiden_best.set_index("Id")["Modularity Class"],
+                ],
+                axis=1,
+            )
+        else:
+            nodes_df = pd.concat(
+                [
+                    nodes_df,
+                    self.leiden_best.set_index("Id")["Modularity Class"],
+                    self.mut_df["count"],
+                ],
+                axis=1,
+            )
 
         # # TODO: No need for these now but need to update the lists
         # nodes_df = mk.addTF(nodes_df, gene_col="Label")

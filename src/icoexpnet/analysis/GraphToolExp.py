@@ -237,7 +237,11 @@ class GraphToolExperiment(NetworkOutput):
                 conn_g.append([gene, weights_sum])
 
             conn_df = pd.DataFrame(conn_g, columns=["gene", col]).set_index("gene")
-            working_df = pd.concat([conn_df, meta_df.loc[meta_df["genes"].isin(genes)].set_index("genes"), mut_df[mut_df.index.isin(genes)]["count"]], axis=1)
+
+            if mut_df is None:
+                working_df = pd.concat([conn_df, meta_df.loc[meta_df["genes"].isin(genes)].set_index("genes")], axis=1)
+            else:
+                working_df = pd.concat([conn_df, meta_df.loc[meta_df["genes"].isin(genes)].set_index("genes"), mut_df[mut_df.index.isin(genes)]["count"]], axis=1)
 
             # 5. Workout the ModCon and save it
             working_df["ModCon_{}_gt".format(self.type)] = (
