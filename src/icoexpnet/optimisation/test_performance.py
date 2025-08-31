@@ -321,10 +321,10 @@ class PerformanceTester:
         
         imevs_results = []
         
-        # Use comprehensive testing for integrated MEVs across all TF counts (but limited per control set)
-        test_ctrl_keys = list(self.ctrl_exps.keys())  # Test all control sets
+        # Use a subset of experiments for integrated MEVs testing (it's more computationally intensive)
+        test_ctrl_keys = list(self.ctrl_exps.keys())[:]
         
-        # First, compute ModCon for all control sets (required for integrated MEVs)
+        # First, compute ModCon for the selected control sets (required for integrated MEVs)
         self.logger.info("Computing ModCon for integrated MEVs benchmarking...")
         for ctrl_idx in test_ctrl_keys:
             try:
@@ -342,9 +342,9 @@ class PerformanceTester:
             ctrl_data = self.ctrl_exps[ctrl_idx]
             self.logger.info(f"Testing integrated MEVs performance for control set {ctrl_idx}...")
             
-            # Test a diverse subset of experiments to cover different TF counts
-            exp_keys = list(ctrl_data["exps"].keys())[:3]  # Test first 3 experiments from each control set
-            
+            # Test on a subset of experiments per control set
+            exp_keys = list(ctrl_data["exps"].keys())[:]  # Test all experiments
+
             for exp_key in exp_keys:
                 exp = ctrl_data["exps"][exp_key]
                 self.logger.info(f"  Benchmarking integrated MEVs for experiment {exp_key}...")
@@ -423,11 +423,11 @@ class PerformanceTester:
         
         pipeline_results = []
         
-        # Test on all experiments for complete pipeline coverage
+        # Test on a subset for complete pipeline (most comprehensive test)
         test_ctrl_key = list(self.ctrl_exps.keys())[0]  # Use first control set
         ctrl_data = self.ctrl_exps[test_ctrl_key]
-        exp_keys = list(ctrl_data["exps"].keys())  # Test all experiments
-        
+        exp_keys = list(ctrl_data["exps"].keys())[:]  # Test all experiments
+
         self.logger.info(f"Testing pipeline performance on control set {test_ctrl_key}, experiments: {exp_keys}")
         
         for exp_key in exp_keys:
