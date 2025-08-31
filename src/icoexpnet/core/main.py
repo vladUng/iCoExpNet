@@ -28,6 +28,17 @@ from scipy.stats import rankdata
 import pickle as pickle
 import graph_tool.all as gt
 
+# Memory optimization utilities
+try:
+    from ..analysis.utilities.memory_optimization import optimize_dataframe_memory
+    from ..analysis.utilities.memory_tracker import PipelineMemoryTracker
+    MEMORY_TRACKING_AVAILABLE = True
+except ImportError:
+    print("Warning: Memory optimization utilities not available")
+    optimize_dataframe_memory = None
+    PipelineMemoryTracker = None
+    MEMORY_TRACKING_AVAILABLE = False
+
 
 def measure_execution_time(func):
     """Decorator to measure the execution time of a function."""
@@ -91,7 +102,7 @@ class iCoExpNet:
     prcsd_data_folder: str
 
     def __init__(
-        self, exp_name, ge_file:str, input_folder:str, output_folder:str, gene_subset_file:str, mut_file:str, genes_kept=5000, edges_pg=3, edges_sel=6, modifier_type="standard", mod_type="mod_max", **kwargs
+        self, exp_name, ge_file:str, input_folder:str, output_folder:str, gene_subset_file:str, mut_file:str, genes_kept=5000, edges_pg=3, edges_sel=6, modifier_type="standard", mod_type="mod_max", enable_memory_tracking=True, **kwargs
     ) -> None:
         """Initialize the iCoExpNet object.
 
@@ -115,6 +126,14 @@ class iCoExpNet:
         self.edges_sel = edges_sel
         self.modifier_type = modifier_type
         self.mod_type = mod_type
+        
+        # Initialize memory tracking
+        self.memory_tracker = None
+        if enable_memory_tracking and MEMORY_TRACKING_AVAILABLE:
+            # Use output_folder when available, otherwise use current directory
+            tracker_output_folder = output_folder if output_folder else "."
+            self.memory_tracker = PipelineMemoryTracker(exp_name, tracker_output_folder)
+            print(f"📊 Memory tracking enabled for experiment: {exp_name}")
 
 
         # check if self.sel_ge_file exists
@@ -123,11 +142,11 @@ class iCoExpNet:
             raise FileExistsError(f"There is no file for Selected genes at {self.sel_ge_file}")
 
         # if we change the edges weights we need to have the mutation files 
-  
         self.mut_file = os.path.abspath(f"{input_folder}/{mut_file}")
-        # check if self.mut_file exists
-        if not os.path.exists(self.mut_file):
-            raise FileNotFoundError(f"There is no file with mutations at {self.mut_file}")
+        # check if self.mut_file exists, if not print a warning that it is not found
+        if not os.path.exists(self.mut_file) or mut_file == '':
+            self.mut_file = None
+            print(f"Warning: There is no file with mutations at {self.mut_file}")
 
         if "graph_type" in kwargs.keys():
             self.graph_type = kwargs["graph_type"]
@@ -284,8 +303,12 @@ class iCoExpNet:
         if not os.path.exists(ge_path):
             raise FileExistsError(f"There is no file for TPMs at {ge_path}")
 
-        if not os.path.exists(mut_path):
-            raise FileExistsError(f"There is no file for TCGA mutations at {mut_path}")
+        # print warning if no mutation file is not found
+        if mut_path is None or not os.path.exists(mut_path):
+            print(f"Warning: There is no file for TCGA mutations at {mut_path}")
+            df_mut = pd.DataFrame()
+        else:
+            df_mut = pd.read_csv(mut_path, index_col="gene", engine="pyarrow", sep="\t")
 
         sel_ge = None
         if sel_ge_path is not None:
@@ -297,13 +320,31 @@ class iCoExpNet:
 
         df = pd.read_csv(ge_path, index_col="gene", sep="\t", engine="pyarrow")
         
-        df_mut = pd.read_csv(mut_path, index_col="gene", engine="pyarrow", sep="\t")
+        # Apply memory optimizations immediately after loading
+        if optimize_dataframe_memory is not None:
+            print(f"### Applying memory optimization to loaded data")
+            
+            # Optimize TPM data
+            original_tpm_size = df.memory_usage(deep=True).sum() / (1024**2)
+            df, tpm_opts, tpm_saved = optimize_dataframe_memory(df, "TPM_data")
+            print(f"### TPM data: {original_tpm_size:.2f} → {original_tpm_size-tpm_saved:.2f} MB (saved {tpm_saved:.2f} MB)")
+            
+            # Optimize mutation data if available
+            if not df_mut.empty:
+                original_mut_size = df_mut.memory_usage(deep=True).sum() / (1024**2)
+                df_mut, mut_opts, mut_saved = optimize_dataframe_memory(df_mut, "mutation_data")
+                print(f"### Mutation data: {original_mut_size:.2f} → {original_mut_size-mut_saved:.2f} MB (saved {mut_saved:.2f} MB)")
+            
+            total_saved = tpm_saved + (mut_saved if not df_mut.empty else 0)
+            if total_saved > 0:
+                print(f"### Total memory saved in data loading: {total_saved:.2f} MB")
+        
         return df, sel_ge, df_mut
 
     @measure_execution_time
     def corr_matrix(self, df: pd.DataFrame, method="spearman"):
         """
-        Calculate the correlation matrix for a given DataFrame.
+        Calculate the correlation matrix for a given DataFrame with memory optimization.
 
         Parameters:
             df (pd.DataFrame): The DataFrame for which the correlation matrix needs to be calculated.
@@ -312,11 +353,22 @@ class iCoExpNet:
         Returns:
             pd.DataFrame: The correlation matrix.
         """
+        
+        print(f"### Computing correlation matrix for {df.shape[0]} genes x {df.shape[1]} samples")
+        original_memory = df.memory_usage(deep=True).sum() / (1024**2)
+        print(f"### Input data memory: {original_memory:.2f} MB")
 
         if method == "partial_corr":
             corr_df = df.T.pcorr() # type: ignore it can be used with pingouin
         else:
             corr_df = df.T.corr(method=method) # type: ignore
+        
+        # Apply memory optimization to correlation matrix
+        if optimize_dataframe_memory is not None:
+            corr_original_size = corr_df.memory_usage(deep=True).sum() / (1024**2)
+            corr_df, corr_opts, corr_saved = optimize_dataframe_memory(corr_df, "correlation_matrix")
+            print(f"### Correlation matrix: {corr_original_size:.2f} → {corr_original_size-corr_saved:.2f} MB (saved {corr_saved:.2f} MB)")
+        
         return corr_df
 
 
@@ -366,7 +418,7 @@ class iCoExpNet:
             """
             return (1 + math.exp(-(x - x0))) ** -1 * offset + 1
 
-        if modifier_type == "standard":
+        if modifier_type == "standard" or mut_df.empty:
             return corr_df
 
         # the first 2 lines ensures that all the mut_counts are found for the used genes

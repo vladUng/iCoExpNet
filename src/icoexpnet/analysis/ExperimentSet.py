@@ -4,10 +4,11 @@ import pickle
 import pandas as pd
 
 from .utilities import sankey_consensus_plot as sky
+from .utilities.memory_optimization import MemoryOptimizedMixin, optimize_dataframe_memory
 from .NetworkOutput import NetworkOutput
 
 
-class ExperimentSet:
+class ExperimentSet(MemoryOptimizedMixin):
 
     def __init__(self, label, base_path, exp_path, mut_df, sel_sets=None, rel_path="", exp_type="PGCNA"):
         self.name = label
@@ -54,6 +55,7 @@ class ExperimentSet:
         """
         stats_path = base_path + path
         df = pd.read_csv(stats_path + "stats_master.tsv", sep="\t")
+        df, _, _ = optimize_dataframe_memory(df, "stats_master")
         # rename columns if exps are from iNet
         if exp_type == "iNet":
             remap_cols = {
@@ -162,8 +164,8 @@ class ExperimentSet:
         combined_edges["Source"] = source
         combined_edges["Target"] = target
 
-        self.combined_edges = combined_edges
-        return combined_edges
+        self.combined_edges, _, _ = optimize_dataframe_memory(combined_edges, "combined_edges")
+        return self.combined_edges
 
     def combine_nodes(self, mod_type="Leiden"):
         combined_nodes, comm_class = pd.DataFrame(), []
@@ -196,8 +198,8 @@ class ExperimentSet:
             # For pyarrow compatibility
             combined_nodes.fillna(pd.NA, inplace=True)
 
-        self.combined_nodes = combined_nodes
-        return combined_nodes, comm_class
+        self.combined_nodes, _, _ = optimize_dataframe_memory(combined_nodes, "combined_nodes")
+        return self.combined_nodes, comm_class
 
     def combine_network_metric(self, stats):
         metrics = []
